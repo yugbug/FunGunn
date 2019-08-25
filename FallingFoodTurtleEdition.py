@@ -1,4 +1,5 @@
 import random
+import time
 import turtle
 from tkinter import PhotoImage
 
@@ -11,40 +12,46 @@ wn.bgcolor("sky blue")
 wn.title("Food Fall")
 wn.tracer(0)
 
+game_over = False
+freeze = False
+pancake_counter = 0
+
+space_was_clicked_time = 0
+space_was_clicked = False
+
+
 PANCAKE_X_LENGTH = 110  # after considering the shrink
 CHEF_PIC_X_LENGTH = 140
 
 top_left = (int(- (WIDTH // 2)), int((HEIGHT // 2)))
 
 # Describing the orders
-order_sent = False  # If computer makes the order
 order_num = 1  # Number of orders completed
 order_complete = False  # Todo: Every time one order is complete, order_num += 1
-title = "FOOD FALL"
-writing_pen = turtle.Turtle()
-writing_pen.speed(0)
-writing_pen.color("white")
-writing_pen.hideturtle()
-writing_pen.penup()
-writing_pen.setposition(-340, 350)
-write_string_one = "%s" % title
-writing_pen.write(write_string_one, False, align="left", font=("Courier", 26, "italic"))
 
-by = "BY GUY NIR"
-writing_pen.setposition(-340, 320)
-write_string_two = "%s" % by
-writing_pen.write(write_string_two, False, align="left", font=("Courier", 26, "italic"))
+
+def writing_turtle(color, x, y, title, font_size, style):
+    writing_pen = turtle.Turtle()
+    writing_pen.speed(0)
+    writing_pen.color(color)
+    writing_pen.hideturtle()
+    writing_pen.penup()
+    writing_pen.setposition(x, y)
+    write_string_one = "%s" % title
+    writing_pen.write(write_string_one, False, align="left", font=("Courier", font_size, style))
+    return writing_pen
+
+
+writing_pen = writing_turtle("white", -340, 350, "FOOD FALL", 26, "italic")
+
+by_string = "BY GUY NIR"
+by = writing_turtle("white", -340, 320, by_string, 26, "italic")
 
 food_speed = 5
 food_on_plate = False
-order = "Order #" + str(order_num) + ":"
-writing_pen.setposition(-330, 250)
-order_string = "%s" % order
-writing_pen.write(order_string, False, align="left", font=("Courier", 26, "underline"))
 
 chef_img = r"/Users/gnir/PycharmProjects/games/Images/chef.gif"
 pancakes_img = r"/Users/gnir/PycharmProjects/games/Images/pancakes.gif"
-# larger = PhotoImage(file=pancakes_img).subsample(2, 2)
 
 # Creating the chef
 wn.addshape(chef_img)
@@ -76,8 +83,42 @@ class Pancake:
         self.time_delay_counter = new_int_value
         return self
 
-    def print_guy_is_handsome(self):
-        print("guy is handsome")
+
+class Order:
+    def __init__(self, amount_of_pancakes, order_number):
+        self.amount_of_pancakes = amount_of_pancakes
+        self.order_number = order_number
+        self.creation_time = time.time()
+        self.order_sent = False
+
+
+orders = []
+num_of_orders = len(orders)  # 5
+
+orderA = Order(amount_of_pancakes=2, order_number=1)
+
+
+def print_orders(some_order):
+    order = "Order #" + str(some_order.order_number) + ":"
+    writing_pen.setposition(-330, 250)  # 250 + var*6
+    order_string = "%s" % order
+    writing_pen.write(order_string, False, align="left", font=("Courier", 26, "underline"))
+    random_food = "X" + str(random.randint(1, 5)) + " pancakes"
+    order_pen2 = turtle.Turtle()
+    order_pen2.speed(0)
+    order_pen2.color("white")
+    order_pen2.penup()
+    order_pen2.setposition(-345, 220)
+    food_string = "%s" % random_food
+    order_pen2.write(food_string, False, align="left", font=("Courier", 26))
+    order_pen2.hideturtle()
+
+
+print_orders(Order(5, 1))
+
+# time delay
+print_orders(Order(2, 3))
+
 
 
 def enlarge(img_path, x, y):
@@ -130,16 +171,30 @@ def move_left():
             turtle.setx(pancake_x)
 
 
-def place_cloche_lid():
-    pass
+def distribute_pancakes():
+    print("Distributing pancakes")
+    print(pancake_counter)
+    if pancake_counter == 0:
+        space_was_clicked = True
+        empty_warning = "Error: CANNOT DISTRIBUTE 0 PANCAKES"
+        t = writing_turtle("red", -100, 350, empty_warning, 20, "bold")
+        space_was_clicked_time = time.time()
+        wn.ontimer(t.clear, 2000)
+    else:
+        print("pancake counter is: " + str(pancake_counter))
+        exit(0)
 
+
+def escape():
+    global game_over
+    game_over = True
+    wn.bye()
 
 def is_collision(turtle, turtle_chef):
     turtle_left_edge = turtle.xcor() - int(PANCAKE_X_LENGTH / 2)
     turtle_right_edge = turtle.xcor() + int(PANCAKE_X_LENGTH / 2)
     turtle_chef_right_edge = turtle_chef.xcor() + int(CHEF_PIC_X_LENGTH / 2)
     turtle_chef_left_edge = turtle_chef.xcor() - int(CHEF_PIC_X_LENGTH / 2)
-    # print(turtle_left_edge, turtle_right_edge,  turtle_chef_left_edge, turtle_chef_right_edge)
 
     if turtle_left_edge < turtle_chef_right_edge:  # Pancake in the right
         if turtle_left_edge > turtle_chef_left_edge:  # make sure not extreme left
@@ -151,35 +206,24 @@ def is_collision(turtle, turtle_chef):
             if turtle.xcor() > turtle_chef_left_edge:
                 return True
 
-    # elif #pancake in the left
 
-    # if int(turtle_left_edge/2) <= turtle_chef_right_edge and int(turtle_right_edge/2) >= turtle_chef_left_edge:
-    #     return True
     return False
 
-    # distance = math.sqrt(math.pow(t1.xcor() - t2.xcor(), 2) + math.pow(t1.ycor() - t2.ycor(), 2))
-    # if distance < 50:
-    #     return True
-    # else:
-    #     return False
 
-
+wn.onkey(escape, "Escape")
 wn.onkey(move_right, "Right")
 wn.onkey(move_left, "Left")
+wn.onkey(distribute_pancakes, "1")
 wn.listen()
 
 
-# random_y_position = random.choice(random.randint(400,600))
-# if random_y_position == range
 
 def generate_pancakes(pancakes_number):
     for i in range(pancakes_number):
         pancake_turtle = shrink(pancakes_img, 2, 2)
         wn.register_shape(pancakes_img)
         pancake_turtle.penup()
-        pancake_turtle.speed(0)
-        pancake_turtle.sety(random.randint(400, 600))
-        pancake_turtle.setx(random.randint(-120, 320))
+        reset_initial_pancake_position(pancake_turtle)
         pancake_turtle.clearstamps()
         pancake_turtle.stamp()
 
@@ -187,31 +231,15 @@ def generate_pancakes(pancakes_number):
         PANCAKES.append(pancake_guy)
 
 
-# 1. Deep approach: understand excatly how to delete turtles
-# 2. workaround: startwith <100 turtles and then if they  go  to the buttom, reset their coornidates.
+def reset_initial_pancake_position(pancake_turtle):
+    pancake_turtle.speed(0)
+    pancake_turtle.sety(random.randint(420, 600))
+    pancake_turtle.setx(random.randint(-120, 320))
+
 
 
 generate_pancakes(number_of_pancakes)
-# for pancakes in PANCAKES:
-#     pancakes.penup()
-#     pancakes.speed(0)
-#     #  Pancakes.Stamp == stamps an image on to the screen on the poinvaders.pop(invaders.index(invader))int given
-#     pancakes.setposition(80, 400)
-#     pancakes.clearstamps()  # Deletes previous position of image / stamp
-#     pancakes.stamp()
 
-# pancakes = shrink(pancakes_img, 2, 2)
-#
-# wn.register_shape(pancakes_img)
-#
-# # pancakes = turtle.Turtle(shape=pancakes_img)
-#
-# pancakes.penup()
-# pancakes.speed(0)
-# #  Pancakes.Stamp == stamps an image on to the screen on the point given
-# pancakes.setposition(80, 400)
-# pancakes.clearstamps()  #  Deletes previous position of image / stamp
-# pancakes.stamp()
 
 
 # Draw the blue line
@@ -232,77 +260,42 @@ pancake_index = len(PANCAKES)
 
 def drop_pancake_down(turtle_pancake):
     y = turtle_pancake.ycor()
-    if y > bottom_of_screen_coordinate:
 
-        y -= food_speed
-        turtle_pancake.clearstamps()
-        turtle_pancake.sety(y)
+    y -= food_speed
+    turtle_pancake.clearstamps()
+    turtle_pancake.sety(y)
 
-    else:
-        PANCAKES.pop(PANCAKES.index(pancake))
-while True:
+
+above_chef_coordinate = -300  # Todo: capitalize both and refactor
+bottom_of_screen_coordinate = -420
+
+while not game_over:
     wn.update()
-    above_chef_coordinate = -300
-    bottom_of_screen_coordinate = -375
-
     for pancake in PANCAKES:
         turtle_pancake = pancake.turtle
-
-        if pancake.get_time_delay_counter() == 0:
-            if turtle_pancake.ycor() > above_chef_coordinate:
-                drop_pancake_down(turtle_pancake)
-
-            if turtle_pancake.ycor() in range(above_chef_coordinate, 5 + above_chef_coordinate):
-                if is_collision(turtle_pancake, chef):
-                    # print("collision!!!!!!")
-
-                    #  Create a delay until panckages go down #
-                    # 1. find the current index of this pancake the list - i
-
-                    # go with for loop on all the  elements in the list with  index greater  than i
-
-                    pancake.on_plate = True
-                    # food_on_plate = True
-                if not pancake.on_plate:
+        if not freeze:
+            if pancake.get_time_delay_counter() == 0:
+                if turtle_pancake.ycor() > above_chef_coordinate:
                     drop_pancake_down(turtle_pancake)
 
-            if turtle_pancake.ycor() < above_chef_coordinate:
-                if not pancake.on_plate:
-                    drop_pancake_down(turtle_pancake)
+                if turtle_pancake.ycor() in range(above_chef_coordinate, 5 + above_chef_coordinate):
+                    if is_collision(turtle_pancake, chef):
 
-            if turtle_pancake.ycor() < bottom_of_screen_coordinate:
-                y = turtle_pancake.ycor()
-                # turtle_pancake.clearstamps()
-                PANCAKES.remove(pancake)
-                turtle_pancake.clear()
-                del pancake.turtle
-                del pancake
+                        if not pancake.on_plate:
+                            pancake_counter += 1
 
-        else:
-            pancake.set_time_delay_counter((pancake.get_time_delay_counter() - 1))
+                            pancake.on_plate = True
 
-    if not order_sent:
-        food_list = ["bacon", "eggs", "toast", "pancakes", "waffles", "coffee", "muffin", "doughnut", "croissant",
-                     "sandwich"]
-        times_list = ["1", "2", "3"]
+                    if not pancake.on_plate:
+                        drop_pancake_down(turtle_pancake)
 
-        random_choice1 = random.choice(food_list)
-        random_choice2 = random_choice1
-        while random_choice1 == random_choice2:
-            random_choice2 = random.choice(food_list)
+                if turtle_pancake.ycor() < above_chef_coordinate:
+                    if not pancake.on_plate:
+                        drop_pancake_down(turtle_pancake)
 
-        random_food = "X" + str(random.choice(times_list)) + " " + str(random_choice1)
-        random_food_2 = "X" + str(random.choice(times_list)) + " " + str(random_choice2)
-        order_pen2 = turtle.Turtle()
-        order_pen2.speed(0)
-        order_pen2.color("white")
-        order_pen2.penup()
-        order_pen2.setposition(-345, 220)
-        food_string = "%s" % random_food
-        order_pen2.write(food_string, False, align="left", font=("Courier", 26))
-        order_pen2.hideturtle()
-        food_string_2 = "%s" % random_food_2
-        writing_pen.speed(0)
-        writing_pen.setposition(-345, 200)
-        writing_pen.write(food_string_2, False, align="left", font=("Courier", 26))
-        order_sent = True
+                if turtle_pancake.ycor() < bottom_of_screen_coordinate:
+                    reset_initial_pancake_position(turtle_pancake)
+
+
+            else:
+                pancake.set_time_delay_counter((pancake.get_time_delay_counter() - 1))
