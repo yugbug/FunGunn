@@ -63,7 +63,6 @@ chef.setposition(100, -325)
 chef_speed = 20
 
 number_of_pancakes = 10
-PANCAKES = []
 
 
 class Pancake:
@@ -83,41 +82,80 @@ class Pancake:
         self.time_delay_counter = new_int_value
         return self
 
-
 class Order:
     def __init__(self, amount_of_pancakes, order_number):
         self.amount_of_pancakes = amount_of_pancakes
         self.order_number = order_number
         self.creation_time = time.time()
-        self.order_sent = False
+        self.constant_y_change = 100
+        self.order_complete = True
+        self.turtle = None
+
+
+class Game:
+    def __init__(self):
+        self.freeze = False
+        self.game_over = False
+        self.pancake_list = []
+        self.chef_destination = 100
+        #  Todo: orders,
+
+    def unfreeze(self):
+        game.freeze = False
+        diff = (self.chef_destination) - chef.xcor()
+        for pancake in game.pancake_list:
+            turtle = pancake.turtle
+            if pancake.on_plate:
+                turtle.setx(turtle.xcor() + diff)
+        chef.setx(self.chef_destination)
+
+    def freeze_game(self):
+        game.freeze = True
+        wn.ontimer(self.unfreeze, 4000)
+
+    # def freeze(self):
+    #     game.pancake_list
 
 
 orders = []
 num_of_orders = len(orders)  # 5
 
 orderA = Order(amount_of_pancakes=2, order_number=1)
+game = Game()
 
 
-def print_orders(some_order):
+def print_orders(some_order, order_num):
+    y_cor = 220 - (order_num * some_order.constant_y_change)
     order = "Order #" + str(some_order.order_number) + ":"
-    writing_pen.setposition(-330, 250)  # 250 + var*6
+    writing_pen.setposition(-330, y_cor + 30)  # 250 + var*6
     order_string = "%s" % order
     writing_pen.write(order_string, False, align="left", font=("Courier", 26, "underline"))
-    random_food = "X" + str(random.randint(1, 5)) + " pancakes"
-    order_pen2 = turtle.Turtle()
-    order_pen2.speed(0)
-    order_pen2.color("white")
-    order_pen2.penup()
-    order_pen2.setposition(-345, 220)
+    random_food = "X" + str(some_order.amount_of_pancakes) + " pancakes"
+    some_order.turtle = turtle.Turtle()
+    some_order.turtle.speed(0)
+    some_order.turtle.color("white")
+    some_order.turtle.penup()
+
+    some_order.turtle.setposition(-345, y_cor)
     food_string = "%s" % random_food
-    order_pen2.write(food_string, False, align="left", font=("Courier", 26))
-    order_pen2.hideturtle()
+    some_order.turtle.write(food_string, False, align="left", font=("Courier", 26))
+    # some_order.turtle.hideturtle()
+    # if oder complete then remove order
 
 
-print_orders(Order(5, 1))
+for i in range(3):
+    order = Order(random.randint(1, 7), i + 1)
+    orders.append(order)
+    print_orders(order, i)
+
+
+# Remove
+#
+# for i in range(3):
+#     some_order = orders[i]
+#     some_order.turtle.hideturtle()
 
 # time delay
-print_orders(Order(2, 3))
 
 
 
@@ -143,14 +181,14 @@ def change_size(enlarge_picture, img_path, x, y):
 def move_right():
     x = chef.xcor()
     x += chef_speed
-    for pancake in PANCAKES:
+    for pancake in game.pancake_list:
         turtle = pancake.turtle
         turtle.penup()
         pancake_x = turtle.xcor()
         # turtle.hideturtle()
-        if x < 290 and not pancake.on_plate:
+        if x < 290 and not pancake.on_plate and not game.freeze:
             chef.setx(x)
-        if x < 290 and pancake.on_plate:
+        if x < 290 and pancake.on_plate and not game.freeze:
             chef.setx(x)
             pancake_x += chef_speed
             turtle.setx(pancake_x)
@@ -158,14 +196,14 @@ def move_right():
 def move_left():
     x = chef.xcor()
     x -= chef_speed
-    for pancake in PANCAKES:
+    for pancake in game.pancake_list:
         turtle = pancake.turtle
         # turtle.hideturtle()
         turtle.penup()
         pancake_x = turtle.xcor()
-        if x > -100 and not pancake.on_plate:
+        if x > -100 and not pancake.on_plate and not game.freeze:
             chef.setx(x)
-        if x > -100 and pancake.on_plate:
+        if x > -100 and pancake.on_plate and not game.freeze:
             chef.setx(x)
             pancake_x -= chef_speed
             turtle.setx(pancake_x)
@@ -181,14 +219,22 @@ def distribute_pancakes():
         space_was_clicked_time = time.time()
         wn.ontimer(t.clear, 2000)
     else:
-        print("pancake counter is: " + str(pancake_counter))
-        exit(0)
+        # game.freeze = True
+        game.freeze_game()
+        chef_destination = -255
+        diff = chef.xcor() - (chef_destination)
+        for pancake in game.pancake_list:
+            turtle = pancake.turtle
+            if pancake.on_plate:
+                turtle.setx(turtle.xcor() - diff)
+        chef.setx(chef_destination)
+        # wn.ontimer(unfreeze, 4000)
 
 
 def escape():
-    global game_over
-    game_over = True
+    game.game_over = True
     wn.bye()
+
 
 def is_collision(turtle, turtle_chef):
     turtle_left_edge = turtle.xcor() - int(PANCAKE_X_LENGTH / 2)
@@ -214,12 +260,16 @@ wn.onkey(escape, "Escape")
 wn.onkey(move_right, "Right")
 wn.onkey(move_left, "Left")
 wn.onkey(distribute_pancakes, "1")
+wn.onkey(distribute_pancakes, "2")
+wn.onkey(distribute_pancakes, "3")
+
 wn.listen()
 
 
 
 def generate_pancakes(pancakes_number):
     for i in range(pancakes_number):
+        # Creating one pancake
         pancake_turtle = shrink(pancakes_img, 2, 2)
         wn.register_shape(pancakes_img)
         pancake_turtle.penup()
@@ -228,7 +278,7 @@ def generate_pancakes(pancakes_number):
         pancake_turtle.stamp()
 
         pancake_guy = Pancake(pancake_turtle, random.randint(0, 1000))
-        PANCAKES.append(pancake_guy)
+        game.pancake_list.append(pancake_guy)
 
 
 def reset_initial_pancake_position(pancake_turtle):
@@ -239,7 +289,6 @@ def reset_initial_pancake_position(pancake_turtle):
 
 
 generate_pancakes(number_of_pancakes)
-
 
 
 # Draw the blue line
@@ -255,7 +304,7 @@ separation_pen.pendown()
 separation_pen.lt(90)
 separation_pen.fd(HEIGHT)
 
-pancake_index = len(PANCAKES)
+pancake_index = len(game.pancake_list)
 
 
 def drop_pancake_down(turtle_pancake):
@@ -271,9 +320,9 @@ bottom_of_screen_coordinate = -420
 
 while not game_over:
     wn.update()
-    for pancake in PANCAKES:
+    for pancake in game.pancake_list:
         turtle_pancake = pancake.turtle
-        if not freeze:
+        if not game.freeze:
             if pancake.get_time_delay_counter() == 0:
                 if turtle_pancake.ycor() > above_chef_coordinate:
                     drop_pancake_down(turtle_pancake)
