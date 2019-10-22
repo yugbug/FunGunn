@@ -82,14 +82,22 @@ class Pancake:
         self.time_delay_counter = new_int_value
         return self
 
+
 class Order:
     def __init__(self, amount_of_pancakes, order_number):
         self.amount_of_pancakes = amount_of_pancakes
         self.order_number = order_number
         self.creation_time = time.time()
-        self.constant_y_change = 100
+        self.constant_y_change = 100  # how much the orders are spaced out by
         self.order_complete = True
         self.turtle = None
+        self.customer_rating = 5  # rating out of 5, 2 main factors: amount of time, amount of pancakes,
+        # add later: different feelings for each customer
+
+        wn.ontimer(self.decrease_rating, 5000)
+
+    def decrease_rating(self):
+        self.customer_rating -= 1
 
 
 class Game:
@@ -97,6 +105,7 @@ class Game:
         self.freeze = False
         self.game_over = False
         self.pancake_list = []
+        self.standard_rating = 1  # this means the standard rating that the player needs to get to. 1-5
         self.chef_destination = 100
         #  Todo: orders,
 
@@ -320,6 +329,7 @@ bottom_of_screen_coordinate = -420
 
 while not game_over:
     wn.update()
+
     for pancake in game.pancake_list:
         turtle_pancake = pancake.turtle
         if not game.freeze:
@@ -348,3 +358,5 @@ while not game_over:
 
             else:
                 pancake.set_time_delay_counter((pancake.get_time_delay_counter() - 1))
+    for order in orders:
+        print("hello from order#" + str(order.order_number) + ": " + str(order.customer_rating))
